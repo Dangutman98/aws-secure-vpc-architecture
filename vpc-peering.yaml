@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Mission Three - Stage 1: VPC Peering Setup (Free-Tier Compatible)'
+
+Parameters:
+  VPCAId:
+    Type: String
+    Description: VPC A ID (existing VPC)
+    Default: vpc-0f1c21be4ff488013
+  
+  VPCBId:
+    Type: String
+    Description: VPC B ID (existing VPC)
+    Default: vpc-0fd4e594a49ffccb1
+
+Resources:
+  # VPC Peering Connection
+  VPCPeeringConnection:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      VpcId: !Ref VPCAId
+      PeerVpcId: !Ref VPCBId
+      Tags:
+        - Key: Name
+          Value: vpca-vpcb-peering
+
+  # Route Table Entry for VPC A Private Subnets to VPC B
+  VPCAPrivateRouteToVPCB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: rtb-00d5fbbdf510bad0a  # private A route table
+      DestinationCidrBlock: 10.1.0.0/16
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  # Route Table Entry for VPC A Public Subnets to VPC B
+  VPCAPublicRouteToVPCB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: rtb-0fb60b986bb8040c2  # public A route table
+      DestinationCidrBlock: 10.1.0.0/16
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  # Route Table Entry for VPC B Private Subnets to VPC A
+  VPCBPrivateRouteToVPCA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: rtb-05dba1dd166519df8  # private B route table
+      DestinationCidrBlock: 10.0.0.0/16
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  # Route Table Entry for VPC B Public Subnets to VPC A
+  VPCBPublicRouteToVPCA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: rtb-0bf5b4437f9291c37  # public B route table
+      DestinationCidrBlock: 10.0.0.0/16
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+Outputs:
+  VPCPeeringConnectionId:
+    Description: VPC Peering Connection ID
+    Value: !Ref VPCPeeringConnection
+    Export:
+      Name: !Sub '${AWS::StackName}-PeeringConnectionId'
+  
+  VPCAPrivateRouteTable:
+    Description: VPC A Private Route Table ID
+    Value: rtb-00d5fbbdf510bad0a
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCAPrivateRT'
+  
+  VPCAPublicRouteTable:
+    Description: VPC A Public Route Table ID
+    Value: rtb-0fb60b986bb8040c2
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCAPublicRT'
+

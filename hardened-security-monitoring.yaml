@@ -1,0 +1,524 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Mission Three - Stage 3: Hardened Security with NACLs & Monitoring"
+
+Parameters:
+  VPCAId:
+    Type: String
+    Description: VPC A ID
+    Default: vpc-0f1c21be4ff488013
+
+  VPCBId:
+    Type: String
+    Description: VPC B ID
+    Default: vpc-0fd4e594a49ffccb1
+
+  MyPublicIP:
+    Type: String
+    Description: Your public IP for SSH access
+    Default: 199.203.95.155/32
+
+Resources:
+  # Network ACL for VPC A
+  NACLVpcA:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPCAId
+      Tags:
+        - Key: Name
+          Value: Nacl A
+
+  # --- NACL A Inbound Rules ---
+  NACLAInboundAllTrafficVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 50
+      Protocol: -1
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      Egress: false
+
+  NACLAInboundEphemeralBastion:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 85
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.1.0/24
+      PortRange: { From: 1024, To: 65535 }
+      Egress: false
+
+  NACLAInboundSSHMyIP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 90
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: !Ref MyPublicIP
+      PortRange: { From: 22, To: 22 }
+      Egress: false
+
+  NACLAInboundICMP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 95
+      Protocol: 1
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
+      Icmp: { Code: -1, Type: -1 }
+      Egress: false
+
+  NACLAInboundSSHVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 100
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 22, To: 22 }
+      Egress: false
+
+  NACLAInboundSSHVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 110
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 22, To: 22 }
+      Egress: false
+
+  NACLAInboundHTTPVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 120
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 80, To: 80 }
+      Egress: false
+
+  NACLAInboundHTTPVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 130
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 80, To: 80 }
+      Egress: false
+
+  NACLAInboundHTTPSVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 140
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 443, To: 443 }
+      Egress: false
+
+  NACLAInboundHTTPSVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 150
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 443, To: 443 }
+      Egress: false
+
+  NACLAInboundMySQLVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 160
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 3306, To: 3306 }
+      Egress: false
+
+  NACLAInboundMySQLVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 170
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 3306, To: 3306 }
+      Egress: false
+
+  NACLAInboundEphemeralVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 180
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 1024, To: 65535 }
+      Egress: false
+
+  NACLAInboundEphemeralVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 190
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 1024, To: 65535 }
+      Egress: false
+
+  NACLAInboundEphemeralInternet:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 200
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
+      PortRange: { From: 1024, To: 65535 }
+      Egress: false
+
+  # --- NACL A Outbound Rules ---
+  NACLAOutboundAllTrafficVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 50
+      Protocol: -1
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      Egress: true
+
+  NACLAOutboundEphemeralMyIP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 90
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: !Ref MyPublicIP
+      PortRange: { From: 1024, To: 65535 }
+      Egress: true
+
+  NACLAOutboundICMP:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 95
+      Protocol: 1
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
+      Icmp: { Code: -1, Type: -1 }
+      Egress: true
+
+  NACLAOutboundSSHVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 100
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 22, To: 22 }
+      Egress: true
+
+  NACLAOutboundSSHVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 110
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 22, To: 22 }
+      Egress: true
+
+  NACLAOutboundHTTPInternet:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 120
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
+      PortRange: { From: 80, To: 80 }
+      Egress: true
+
+  NACLAOutboundHTTPVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 121
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 80, To: 80 }
+      Egress: true
+
+  NACLAOutboundHTTPVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 125
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 80, To: 80 }
+      Egress: true
+
+  NACLAOutboundHTTPSInternet:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 130
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
+      PortRange: { From: 443, To: 443 }
+      Egress: true
+
+  NACLAOutboundHTTPSVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 135
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 443, To: 443 }
+      Egress: true
+
+  NACLAOutboundMySQLVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 140
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 3306, To: 3306 }
+      Egress: true
+
+  NACLAOutboundEphemeralVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 150
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 1024, To: 65535 }
+      Egress: true
+
+  NACLAOutboundEphemeralVPCB:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcA
+      RuleNumber: 160
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.1.0.0/16
+      PortRange: { From: 1024, To: 65535 }
+      Egress: true
+
+  # --- Network ACL for VPC B ---
+  NACLVpcB:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPCBId
+      Tags:
+        - Key: Name
+          Value: Nacl B
+
+  # NACL B Inbound Rules
+  NACLBInboundSSHVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcB
+      RuleNumber: 100
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 22, To: 22 }
+      Egress: false
+
+  NACLBInboundHTTPVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcB
+      RuleNumber: 110
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 80, To: 80 }
+      Egress: false
+
+  NACLBInboundHTTPSVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcB
+      RuleNumber: 120
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 443, To: 443 }
+      Egress: false
+
+  NACLBInboundMySQLVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcB
+      RuleNumber: 130
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 3306, To: 3306 }
+      Egress: false
+
+  NACLBInboundEphemeralVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcB
+      RuleNumber: 140
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 1024, To: 65535 }
+      Egress: false
+
+  # NACL B Outbound Rules
+  NACLBOutboundAllInternet:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcB
+      RuleNumber: 100
+      Protocol: -1
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+
+  NACLBOutboundAllVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcB
+      RuleNumber: 110
+      Protocol: -1
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      Egress: true
+
+  NACLBOutboundHTTPVPCA:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLVpcB
+      RuleNumber: 120
+      Protocol: 6
+      RuleAction: allow
+      CidrBlock: 10.0.0.0/16
+      PortRange: { From: 80, To: 80 }
+      Egress: true
+
+  # --- Subnet Associations for VPC A ---
+  NaclAssocPrivate1A:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-0c923f2105636246e
+      NetworkAclId: !Ref NACLVpcA
+
+  NaclAssocPublic1A:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-0921e14c7da0fa591
+      NetworkAclId: !Ref NACLVpcA
+
+  NaclAssocPrivate2A:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-04be962d599327ed8
+      NetworkAclId: !Ref NACLVpcA
+
+  NaclAssocPublic2A:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-0ab61adf6e9d451c2
+      NetworkAclId: !Ref NACLVpcA
+
+  NaclAssocPrivateDAZ:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-06f6bda700507f3a1
+      NetworkAclId: !Ref NACLVpcA
+
+  # --- Subnet Associations for VPC B ---
+  NaclAssocVPCB1:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-07b06a39ff2a27876
+      NetworkAclId: !Ref NACLVpcB
+
+  NaclAssocVPCB2:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-0fd2c57ecd08a909a
+      NetworkAclId: !Ref NACLVpcB
+
+  NaclAssocVPCB3:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-0a7923a109b3a35a2
+      NetworkAclId: !Ref NACLVpcB
+
+  NaclAssocVPCB4:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: subnet-0779d7a208fcf0c98
+      NetworkAclId: !Ref NACLVpcB
+
+  # --- CloudWatch Monitoring Alarm ---
+  AppServerStatusAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: AppServer-Status-Check-Failed
+      AlarmDescription: "Triggers if the App Server fails underlying EC2 status checks"
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed
+      Dimensions:
+        - Name: InstanceId
+          Value: i-0f224ec07043fab2f
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: missing
+
+Outputs:
+  NACLVpcAId:
+    Description: Network ACL for VPC A
+    Value: !Ref NACLVpcA
+    Export:
+      Name: !Sub "${AWS::StackName}-NACLVpcA"
+
+  NACLVpcBId:
+    Description: Network ACL for VPC B
+    Value: !Ref NACLVpcB
+    Export:
+      Name: !Sub "${AWS::StackName}-NACLVpcB"
+
+  AlarmId:
+    Description: Monitoring Alarm ID
+    Value: !Ref AppServerStatusAlarm
